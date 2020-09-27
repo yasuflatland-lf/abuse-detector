@@ -30,17 +30,18 @@ func Parse(url string, links *[]string) (bool, error) {
 	}
 
 	// Find the review items
-	doc.Find("").Each(func(i int, s *goquery.Selection) {
+	doc.Find("a").Each(func(i int, s *goquery.Selection) {
 		// For each item found, get the band and title
-		band := s.Find("a").Text()
-		*links = append(*links, band)
+		attr, exists := s.Attr("href")
 
-		fmt.Printf("Review %d: %s \n", i, band)
+		if true == exists {
+			*links = append(*links, attr)
+		}
 	})
 
 	if len(*links) <= 0 {
 		return false, nil
 	}
 
-	return false, nil
+	return true, nil
 }

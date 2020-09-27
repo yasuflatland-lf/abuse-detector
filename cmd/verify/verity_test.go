@@ -1,6 +1,7 @@
 package verify
 
 import (
+	"github.com/kr/pretty"
 	"testing"
 )
 
@@ -10,7 +11,9 @@ func TestParse(t *testing.T) {
 	links := []string{""}
 	has, err := Parse(url, &links)
 
-	if has == false || err == nil {
+	if has == false || err != nil {
 		t.Errorf("has %t error %x", has, err)
 	}
+
+	t.Logf("links %+v", pretty.Formatter(links))
 }
