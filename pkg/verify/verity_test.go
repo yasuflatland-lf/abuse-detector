@@ -6,9 +6,29 @@ import (
 	"github.com/kr/pretty"
 )
 
+func TestExtractHostName(t *testing.T) {
+	cases := []struct {
+		url    string
+		result string
+	}{
+		{url: "https://www.liferay.co.jp/?q=aaa", result: "https://www.liferay.co.jp"},
+		{url: "http://violet-evergarden.jp/aaa", result: "http://violet-evergarden.jp"},
+		{url: "/some/path", result: ""},
+		{url: "smb://some/path", result: ""},
+	}
+
+	for _, c := range cases {
+		ret, err := ExtractHostName(c.url)
+
+		if err != nil || ret.URL != c.result {
+			t.Errorf("url %s is error. should be %s", ret, c.result)
+		}
+	}
+}
+
 func TestIsSchema(t *testing.T) {
 	cases := []struct {
-		url  string
+		url    string
 		result bool
 	}{
 		{url: "https://www.liferay.co.jp/", result: true},
@@ -28,7 +48,7 @@ func TestIsSchema(t *testing.T) {
 
 func TestParse(t *testing.T) {
 	cases := []struct {
-		url  string
+		url string
 	}{
 		{url: "https://www.liferay.co.jp/"},
 		{url: "http://violet-evergarden.jp/"},

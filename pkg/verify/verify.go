@@ -3,10 +3,53 @@ package verify
 import (
 	"errors"
 	"fmt"
-	"github.com/PuerkitoBio/goquery"
-	"log"
 	"net/url"
+
+	"github.com/PuerkitoBio/goquery"
+	"github.com/op/go-logging"
+	"github.com/thoas/go-funk"
 )
+
+var log = logging.MustGetLogger("verify")
+
+var logFmt = logging.MustStringFormatter(
+	`%{color}%{time:15:04:05.000} PID=%{pid} MOD=%{module} PKG=%{shortpkg} %{shortfile} FUNC=%{shortfunc} ▶ %{level:.4s} %{id:03x} %{color:reset} %{message}`,
+)
+
+type HostNames struct {
+	URL      string
+	HostName string
+}
+
+// Extract valid URL for verification API
+// Return URL with either http or https or return empty string
+func ExtractHostName(urlStr string) (HostNames, error) {
+	hn := &HostNames{
+		URL:      "",
+		HostName: "",
+	}
+
+	u, err := url.Parse(urlStr)
+
+	if err != nil {
+		log.Error(err)
+		return *hn, err
+	}
+
+	isSchema, err := IsSchema(urlStr)
+
+	if err != nil {
+		log.Error(err)
+		return *hn, err
+	}
+
+	if u.Hostname() != "" && true == isSchema {
+		hn.URL = u.Scheme + "://" + u.Hostname()
+		hn.HostName = u.Hostname()
+	}
+
+	return *hn, nil
+}
 
 // Check if the URL includes schema
 // true if it does or false
@@ -14,7 +57,7 @@ func IsSchema(urlStr string) (bool, error) {
 	parsedUrl, err := url.Parse(urlStr)
 
 	if nil != err {
-		log.Fatal(err)
+		log.Error(err)
 		return false, err
 	}
 
@@ -32,24 +75,32 @@ func IsSchema(urlStr string) (bool, error) {
 
 // Parse HTML
 func Parse(url string, links *[]string) (bool, error) {
-	// Request the HTML page.
-	res, err := Fetch(url)
+
+	hn, err := ExtractHostName(url)
+
 	if err != nil {
-		log.Fatal(err)
+		log.Error(err)
+		return false, err
+	}
+
+	// Request the HTML page.
+	res, err := Fetch(hn.URL)
+	if err != nil {
+		log.Error(err)
 		return false, err
 	}
 
 	defer res.Body.Close()
 	if res.StatusCode != 200 {
 		msg := fmt.Sprintf("status code error: %d %s", res.StatusCode, res.Status)
-		log.Fatal(msg)
+		log.Error(msg)
 		return false, errors.New(msg)
 	}
 
 	// Load the HTML document
 	doc, err := goquery.NewDocumentFromReader(res.Body)
 	if err != nil {
-		log.Fatal(err)
+		log.Error(err)
 		return false, err
 	}
 
@@ -71,6 +122,9 @@ func Parse(url string, links *[]string) (bool, error) {
 			*links = append(*links, attr)
 		}
 	})
+
+	// Unique strings
+	*links = funk.UniqString(*links)
 
 	return true, nil
 }
