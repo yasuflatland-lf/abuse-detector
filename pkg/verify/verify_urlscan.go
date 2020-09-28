@@ -125,7 +125,7 @@ func Run(url string) (bool, string, error) {
 		}
 	}
 
-	log.Error("No malicious links found.")
+	log.Info("No malicious links found.")
 	return false, "", nil
 }
 

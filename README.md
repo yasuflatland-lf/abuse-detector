@@ -11,6 +11,12 @@ This application is for previnting phishing sites are created on Studio.
 go build *.go
 ```    
 ## How to run
+Run your chrome headless-shell.
+```
+docker pull chromedp/headless-shell
+docker run -d -p 9222:9222 --rm --name headless-shell chromedp/headless-shell
+```
+Then start up the server
 ```shell script
 go run *.go
 ```
