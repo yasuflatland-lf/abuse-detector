@@ -11,7 +11,7 @@ func TestRequest(t *testing.T) {
 		url    string
 		result bool
 	}{
-		{url: "https://vodafone-billsupport.com/", result: false},
+		{url: "https://www.google.com/", result: false},
 		{url: "http://paypal-support.my-sumaya.com", result: true},
 		{url: "https://my3-uk-confirm.info", result: true},
 	}

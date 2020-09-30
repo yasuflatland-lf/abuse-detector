@@ -10,6 +10,7 @@ import (
 const projectDirName = "studio-abuse-detector"
 
 // LoadEnv loads env vars from .env
+// https://github.com/joho/godotenv/issues/43
 func LoadEnv() {
 	re := regexp.MustCompile(`^(.*` + projectDirName + `)`)
 	cwd, _ := os.Getwd()

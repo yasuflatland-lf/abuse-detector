@@ -28,6 +28,16 @@ func IsHttps(urlStr string) (bool, error) {
 
 // Fetch URL response
 // Automatically detect https or http
+// TODO : need to replace this to below.
+// https://future-architect.github.io/articles/20190713/
+//import (
+//    "https://godoc.org/golang.org/x/net/context/ctxhttp"
+//)
+//
+//func accessSHS(ctx context.Context) {
+//    // ctxを第一引数で渡す
+//    res, err := ctxhttp.Get(ctx, nil, "https://shs.sh")
+//}
 func Fetch(url string) (resp *http.Response, err error) {
 	ret, err := IsHttps(url)
 

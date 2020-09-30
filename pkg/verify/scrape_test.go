@@ -5,7 +5,17 @@ import (
 )
 
 func TestScrape(t *testing.T) {
-	Scrape(`https://colleenpeckpdf.studio.site/`)
+	var links = []string{}
+	url := `https://www.google.com/`
+	ret, err := Scrape(url, &links)
+
+	if err != nil || true != ret {
+		t.Errorf("url <%s>, %v", url, err)
+	}
+
+	if len(links) <= 0 {
+		t.Error("The length of links is invalid.")
+	}
 }
 
 func TestFindHref(t *testing.T) {

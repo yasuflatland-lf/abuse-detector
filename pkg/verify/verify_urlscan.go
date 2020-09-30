@@ -8,9 +8,31 @@ import (
 	"github.com/pkg/errors"
 )
 
+type UrlScanResult struct {
+	Result string `json:"result"`
+}
+
+// Initial Request response
+type UrlScanSubmitResponse struct {
+	Results []UrlScanResult `json:"results"`
+}
+
+// UrlScanResult details
+type UrlScanOverall struct {
+	Malicious bool `json:"malicious"`
+}
+
+type UrlScanVerdicts struct {
+	Overall UrlScanOverall `json:"overall"`
+}
+
+type UrlScanResultDetails struct {
+	Verdicts UrlScanVerdicts `json:"verdicts"`
+}
+
 // Phishing site URL validation
 // true if it's phishing site or false
-func IsPhishingURL(r Result) (bool, error) {
+func IsPhishingURL(r UrlScanResult) (bool, error) {
 	client := resty.New()
 
 	resp, err := client.R().
@@ -22,21 +44,20 @@ func IsPhishingURL(r Result) (bool, error) {
 		return false, errors.Wrap(err, "Fail to read urlscan.io POST result")
 	}
 
-	var result ResultDetails
+	var result UrlScanResultDetails
 	err = json.Unmarshal([]byte(resp.String()), &result)
 	if err != nil {
 		log.Error(err)
 		//log.Error("doc %+v", pretty.Formatter(err))
-		return false, nil
+		return false, err
 	}
 
-	//fmt.Println("RESULT :", result.Verdicts.Overall.Malicious)
 	return result.Verdicts.Overall.Malicious, nil
 }
 
 // Phishing site URL validation
 // true if it's phishing site or false
-func Results(results []Result) (bool, error) {
+func Results(results []UrlScanResult) (bool, error) {
 	for _, r := range results {
 		ret, err := IsPhishingURL(r)
 
@@ -82,7 +103,7 @@ func Request(url string) (bool, error) {
 		return false, errors.Wrap(err, "Fail to read urlscan.io POST result")
 	}
 
-	var subRes submitResponse
+	var subRes UrlScanSubmitResponse
 
 	err = json.Unmarshal([]byte(resp.String()), &subRes)
 	if err != nil {
@@ -101,7 +122,7 @@ func Run(url string) (bool, string, error) {
 
 	// Parse site
 	links := []string{url}
-	has, err := Parse(url, &links)
+	has, err := Scrape(url, &links)
 
 	if has == false || err != nil {
 		log.Error("Parse Error : has %t error %x", has, err)
@@ -127,26 +148,4 @@ func Run(url string) (bool, string, error) {
 
 	log.Info("No malicious links found.")
 	return false, "", nil
-}
-
-type Result struct {
-	Result string `json:"result"`
-}
-
-// Initial Request response
-type submitResponse struct {
-	Results []Result `json:"results"`
-}
-
-// Result details
-type Overall struct {
-	Malicious bool `json:"malicious"`
-}
-
-type Verdicts struct {
-	Overall Overall `json:"overall"`
-}
-
-type ResultDetails struct {
-	Verdicts Verdicts `json:"verdicts"`
 }

@@ -2,14 +2,15 @@ package verify
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	"github.com/chromedp/cdproto/cdp"
 	"github.com/chromedp/chromedp"
 )
 
-func Scrape(url string) (string, error) {
+// TODO : Need to implement timeout
+// Scrape links from a url with Chrome headless browser
+func Scrape(url string, links *[]string) (bool, error) {
 	// create context
 	ctx, cancel := chromedp.NewContext(context.Background())
 	defer cancel()
@@ -24,11 +25,13 @@ func Scrape(url string) (string, error) {
 
 	if err != nil {
 		log.Error(err)
+		return false, err
 	}
 
-	fmt.Println(NodeValues(res))
+	// log.Debug(NodeValues(res))
+	*links = NodeValues(res)
 
-	return "", nil
+	return true, nil
 }
 
 func FindHref(attrs []string) (string, bool) {
@@ -43,7 +46,6 @@ func FindHref(attrs []string) (string, bool) {
 func NodeValues(nodes []*cdp.Node) []string {
 	var vs []string
 	for _, n := range nodes {
-		fmt.Println(n.Attributes)
 		val, ret := FindHref(n.Attributes)
 		if true == ret {
 			vs = append(vs, val)
