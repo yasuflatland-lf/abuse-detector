@@ -3,6 +3,7 @@ package verify
 import (
 	"errors"
 	"fmt"
+	"net/http"
 	"net/url"
 
 	"github.com/PuerkitoBio/goquery"
@@ -83,7 +84,7 @@ func Parse(url string, links *[]string) (bool, error) {
 		return false, err
 	}
 
-	// Request the HTML page.
+	// request the HTML page.
 	res, err := Fetch(hn.URL)
 	if err != nil {
 		log.Error(err)
@@ -91,7 +92,7 @@ func Parse(url string, links *[]string) (bool, error) {
 	}
 
 	defer res.Body.Close()
-	if res.StatusCode != 200 {
+	if res.StatusCode != http.StatusOK {
 		msg := fmt.Sprintf("status code error: %d %s", res.StatusCode, res.Status)
 		log.Error(msg)
 		return false, errors.New(msg)

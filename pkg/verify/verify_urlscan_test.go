@@ -5,6 +5,8 @@ import (
 )
 
 func TestRequest(t *testing.T) {
+	LoadEnv()
+
 	cases := []struct {
 		url    string
 		result bool
