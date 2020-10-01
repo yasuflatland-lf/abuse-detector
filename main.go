@@ -53,7 +53,7 @@ func Verify(c echo.Context) error {
 		Error:     nil,
 	}
 
-	ret, link, err := verify.Run(url)
+	ret, link, err := verify.Do(url)
 
 	if err != nil {
 		log.Error(err)

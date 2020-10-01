@@ -18,8 +18,11 @@ func TestGsafeRequest(t *testing.T) {
 		{url: "https://github.com/", result: false},
 		{url: "https://actionukee.com/WuofvBw", result: true},
 	}
+
+	v := NewTransparencyReportVerifyStrategy()
+
 	for _, c := range cases {
-		ret, _ := GsafeRequest(c.url)
+		ret, _ := v.Request(c.url)
 		if ret != c.result {
 			t.Errorf("ret: %t result: %s}\n", ret, c.url)
 		}

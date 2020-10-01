@@ -8,6 +8,13 @@ import (
 	"github.com/pkg/errors"
 )
 
+// For Strategy Pattern
+type UrlScanVerifyStrategy struct{}
+
+func NewUrlScanVerifyStrategy() *UrlScanVerifyStrategy {
+	return &UrlScanVerifyStrategy{}
+}
+
 type UrlScanResult struct {
 	Result string `json:"result"`
 }
@@ -32,7 +39,7 @@ type UrlScanResultDetails struct {
 
 // Phishing site URL validation
 // true if it's phishing site or false
-func IsPhishingURL(r UrlScanResult) (bool, error) {
+func (v *UrlScanVerifyStrategy) IsPhishingURL(r UrlScanResult) (bool, error) {
 	client := resty.New()
 
 	resp, err := client.R().
@@ -57,9 +64,9 @@ func IsPhishingURL(r UrlScanResult) (bool, error) {
 
 // Phishing site URL validation
 // true if it's phishing site or false
-func Results(results []UrlScanResult) (bool, error) {
+func (v *UrlScanVerifyStrategy) Results(results []UrlScanResult) (bool, error) {
 	for _, r := range results {
-		ret, err := IsPhishingURL(r)
+		ret, err := v.IsPhishingURL(r)
 
 		if err != nil {
 			log.Error("Fail to read response")
@@ -78,7 +85,7 @@ func Results(results []UrlScanResult) (bool, error) {
 
 // Phishing site URL validation
 // true if it's phishing site or false
-func Request(url string) (bool, error) {
+func (v *UrlScanVerifyStrategy) Request(url string) (bool, error) {
 	apiUrl := os.Getenv("URLSCAN_API_URL")
 
 	hn, err := ExtractHostName(url)
@@ -112,26 +119,13 @@ func Request(url string) (bool, error) {
 		return false, nil
 	}
 
-	return Results(subRes.Results)
+	return v.Results(subRes.Results)
 }
 
-// Run Verification
-func Run(url string) (bool, string, error) {
-
-	log.Info("Verification Start for <" + url + ">")
-
-	// Parse site
-	links := []string{url}
-	has, err := Scrape(url, &links)
-
-	if has == false || err != nil {
-		log.Error("Parse Error : has %t error %x", has, err)
-		return has, "", err
-	}
-
+func (v *UrlScanVerifyStrategy) Exec(links *[]string) (bool, string, error) {
 	// Check Links
-	for _, link := range links {
-		ret, err := Request(link)
+	for _, link := range *links {
+		ret, err := v.Request(link)
 
 		if err != nil {
 			log.Error(err)
@@ -146,6 +140,46 @@ func Run(url string) (bool, string, error) {
 		}
 	}
 
-	log.Info("No malicious links found.")
 	return false, "", nil
+}
+
+// Do Verification
+func (v *UrlScanVerifyStrategy) Do(url string) (bool, string, error) {
+
+	log.Info("Verification Start for <" + url + ">")
+
+	// Parse site
+	var links []string
+	has, err := Scrape(url, &links)
+
+	if has == false || err != nil {
+		log.Error("Parse Error : has %t error %x", has, err)
+		return has, "", err
+	}
+
+	// Check Links
+	ret, link, err := v.Exec(&links)
+
+	if err != nil {
+		log.Error(err)
+		return ret, link, err
+	}
+	//for _, link := range links {
+	//	ret, err := Request(link)
+	//
+	//	if err != nil {
+	//		log.Error(err)
+	//		return false, "", err
+	//	}
+	//
+	//	if true == ret {
+	//		log.Error("Phishing link found. => %s", link)
+	//		return true, link, nil
+	//	} else {
+	//		log.Info("OK <" + link + ">")
+	//	}
+	//}
+
+	log.Info("No malicious links found.")
+	return ret, link, nil
 }

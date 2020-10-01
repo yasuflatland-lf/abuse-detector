@@ -12,6 +12,24 @@ var logFmt = logging.MustStringFormatter(
 	`%{color}%{time:15:04:05.000} PID=%{pid} MOD=%{module} PKG=%{shortpkg} %{shortfile} FUNC=%{shortfunc} ▶ %{level:.4s} %{id:03x} %{color:reset} %{message}`,
 )
 
+// Verify Interface
+type Verify interface {
+	Request(url string) (bool, error)
+	Do(url string) (bool, string, error)
+}
+
+type VerifyExecutor struct {
+	url      string
+	strategy Verify
+}
+
+func NewVerifyExecutor(url string, v Verify) *VerifyExecutor {
+	return &VerifyExecutor{
+		url:      url,
+		strategy: v,
+	}
+}
+
 type HostNames struct {
 	URL      string
 	HostName string
