@@ -15,7 +15,7 @@ var logFmt = logging.MustStringFormatter(
 
 // Verify Interface
 type Verify interface {
-	Request(ctx context.Context, url string) (bool, error)
+	Request(ctx context.Context, url string) Response
 	Do(ctx context.Context, url string) (Result, error)
 }
 
@@ -23,7 +23,17 @@ type Verify interface {
 type Result struct {
 	StrategyName   string
 	Malicious      bool
+	StatusCode     int
+	Error          error
 	MaliciousLinks []string
+}
+
+// Verify Response
+type Response struct {
+	Result     bool
+	StatusCode int
+	Error      error
+	Malicious  bool
 }
 
 type HostNames struct {

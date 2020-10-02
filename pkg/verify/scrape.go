@@ -2,17 +2,26 @@ package verify
 
 import (
 	"context"
+	"flag"
 	"strings"
 
 	"github.com/chromedp/cdproto/cdp"
 	"github.com/chromedp/chromedp"
 )
 
-// TODO : Need to implement timeout
 // Scrape links from a Url with Chrome headless browser
+// chromedp uses the external API. For more details, please refer the link below.
+// https://docs.browserless.io/docs/go.html#docsNav
 func Scrape(ctx context.Context, url string, links *[]string) (bool, error) {
+	var devToolWsUrl string
 
-	ctxLocal, _ := chromedp.NewContext(ctx)
+	flag.StringVar(&devToolWsUrl, "devtools-ws-url", "wss://chrome.browserless.io", "DevTools Websocket URL")
+	flag.Parse()
+
+	actxt, cancelActxt := chromedp.NewRemoteAllocator(ctx, devToolWsUrl)
+	defer cancelActxt()
+
+	ctxLocal, _ := chromedp.NewContext(actxt) //
 
 	var res []*cdp.Node
 	allHtml := `//a`

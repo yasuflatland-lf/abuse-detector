@@ -47,31 +47,48 @@ func (v *TransparencyReportVerifyStrategy) IsMalcious(respStr string) bool {
 }
 
 // Referred https://transparencyreport.google.com/safe-browsing/search
-func (v *TransparencyReportVerifyStrategy) Request(ctx context.Context, verifyUrl string) (bool, error) {
+func (v *TransparencyReportVerifyStrategy) Request(ctx context.Context, verifyUrl string) Response {
 	apiUrl := os.Getenv("GOOGLE_TRANSPARENCYREPORT_API_URL")
+
+	response := &Response{
+		Result:     false,
+		StatusCode: http.StatusOK,
+		Error:      nil,
+		Malicious:  false,
+	}
 
 	// request the HTML page.
 	res, err := Fetch(apiUrl + "status?site=" + verifyUrl)
 
 	if err != nil {
+		response.StatusCode = res.StatusCode
+		response.Error = err
 		log.Error(err)
-		return false, err
+		return *response
 	}
 
 	defer res.Body.Close()
 	if res.StatusCode != http.StatusOK {
 		msg := fmt.Sprintf("status code error: %d %s", res.StatusCode, res.Status)
 		log.Error(msg)
-		return false, errors.New(msg)
+		response.StatusCode = res.StatusCode
+		response.Error = errors.New(msg)
+		return *response
 	}
 
 	bodyBytes, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		log.Error(err)
-		return false, err
+		response.StatusCode = res.StatusCode
+		response.Error = err
+		return *response
 	}
 
-	return v.IsMalcious(string(bodyBytes)), nil
+	response.Result = true
+	response.StatusCode = http.StatusOK
+	response.Error = nil
+	response.Malicious = v.IsMalcious(string(bodyBytes))
+	return *response
 }
 
 // TODO : need to make this func concurrent.
@@ -84,12 +101,14 @@ func (v *TransparencyReportVerifyStrategy) Exec(ctx context.Context, links *[]st
 	for _, l := range *links {
 		go func(link string) {
 			retResult := &Result{}
-			ret, err := v.Request(ctx, link)
+			ret := v.Request(ctx, link)
 
-			retResult.Malicious = ret
+			retResult.StatusCode = ret.StatusCode
+			retResult.Error = ret.Error
+			retResult.Malicious = ret.Malicious
 			retResult.MaliciousLinks = append(retResult.MaliciousLinks, link)
 
-			errCh <- err
+			errCh <- ret.Error
 			retCh <- *retResult
 		}(l)
 	}

@@ -1,5 +1,5 @@
 # Abuse Detector
-This application is for previnting phishing sites are created on Studio.
+This application is for preventing phishing sites are created on Studio.
 
 ## Requirements
 - Go 1.14.9 >=
@@ -10,15 +10,13 @@ This application is for previnting phishing sites are created on Studio.
 ```shell script
 go build *.go
 ```    
-## How to run
-Run your chrome headless-shell.
-```
-docker pull chromedp/headless-shell
-docker run -d -p 9222:9222 --rm --name headless-shell chromedp/headless-shell
-```
-Then start up the server
+## How to run for Development
 ```shell script
 go run *.go
+```
+How to run production
+```
+docker-compose up
 ```
 ## How to build Docker image
 This is how to build and confirm the image is built correctly.

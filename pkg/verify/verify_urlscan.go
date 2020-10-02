@@ -3,6 +3,7 @@ package verify
 import (
 	"context"
 	"encoding/json"
+	"net/http"
 	"os"
 
 	"github.com/go-resty/resty/v2"
@@ -86,14 +87,21 @@ func (v *UrlScanVerifyStrategy) Results(results []UrlScanResult) (bool, error) {
 
 // Phishing site URL validation
 // true if it's phishing site or false
-func (v *UrlScanVerifyStrategy) Request(ctx context.Context, url string) (bool, error) {
+func (v *UrlScanVerifyStrategy) Request(ctx context.Context, url string) Response {
 	apiUrl := os.Getenv("URLSCAN_API_URL")
+	response := &Response{
+		Result:     false,
+		StatusCode: http.StatusOK,
+		Error:      nil,
+		Malicious:  false,
+	}
 
 	hn, err := ExtractHostName(url)
 
 	if err != nil {
+		response.Error = err
 		log.Error(err)
-		return false, err
+		return *response
 	}
 
 	// Create a Resty Client
@@ -109,7 +117,9 @@ func (v *UrlScanVerifyStrategy) Request(ctx context.Context, url string) (bool, 
 
 	if err != nil {
 		log.Error("Fail to read response")
-		return false, errors.Wrap(err, "Fail to read urlscan.io POST result")
+		response.StatusCode = resp.StatusCode()
+		response.Error = errors.Wrap(err, "Fail to read urlscan.io POST result")
+		return *response
 	}
 
 	var subRes UrlScanSubmitResponse
@@ -117,11 +127,23 @@ func (v *UrlScanVerifyStrategy) Request(ctx context.Context, url string) (bool, 
 	err = json.Unmarshal([]byte(resp.String()), &subRes)
 	if err != nil {
 		log.Error(err)
-		//log.Error("doc %+v", pretty.Formatter(err))
-		return false, nil
+		response.Error = errors.Wrap(err, "Unmarshal JSON")
+		return *response
 	}
 
-	return v.Results(subRes.Results)
+	ret, err := v.Results(subRes.Results)
+
+	if err != nil {
+		log.Error(err)
+		response.Error = err
+		return *response
+	}
+
+	response.Result = true
+	response.StatusCode = http.StatusOK
+	response.Error = err
+	response.Malicious = ret
+	return *response
 }
 
 func (v *UrlScanVerifyStrategy) Exec(ctx context.Context, links *[]string) (bool, string, error) {
@@ -132,12 +154,14 @@ func (v *UrlScanVerifyStrategy) Exec(ctx context.Context, links *[]string) (bool
 	for _, l := range *links {
 		go func(link string) {
 			retResult := &Result{}
-			ret, err := v.Request(ctx, link)
+			ret := v.Request(ctx, link)
 
-			retResult.Malicious = ret
+			retResult.StatusCode = ret.StatusCode
+			retResult.Error = ret.Error
+			retResult.Malicious = ret.Malicious
 			retResult.MaliciousLinks = append(retResult.MaliciousLinks, link)
 
-			errCh <- err
+			errCh <- ret.Error
 			retCh <- *retResult
 		}(l)
 	}

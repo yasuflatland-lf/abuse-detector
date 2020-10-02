@@ -23,9 +23,9 @@ func TestRequest(t *testing.T) {
 	v := NewUrlScanVerifyStrategy()
 
 	for _, c := range cases {
-		ret, _ := v.Request(ctx, c.url)
-		if ret != c.result {
-			t.Errorf("ret<%t> result<%s>}\n", ret, c.url)
+		ret := v.Request(ctx, c.url)
+		if ret.Malicious != c.result {
+			t.Errorf("ret<%v> result<%s>}\n", ret, c.url)
 		}
 	}
 }
