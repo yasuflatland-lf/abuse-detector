@@ -25,6 +25,13 @@ func main() {
 		log.Error(err)
 	}
 
+	router := NewRouter()
+
+	// Start server
+	router.Logger.Fatal(router.Start(":3000"))
+}
+
+func NewRouter() *echo.Echo {
 	// Echo instance
 	e := echo.New()
 
@@ -36,8 +43,7 @@ func main() {
 	// Routes
 	e.GET("/verify", Verify)
 
-	// Start server
-	e.Logger.Fatal(e.Start(":3000"))
+	return e
 }
 
 type VerifyResponse struct {
