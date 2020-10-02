@@ -1,6 +1,7 @@
 package verify
 
 import (
+	"context"
 	"encoding/json"
 	"os"
 
@@ -85,7 +86,7 @@ func (v *UrlScanVerifyStrategy) Results(results []UrlScanResult) (bool, error) {
 
 // Phishing site URL validation
 // true if it's phishing site or false
-func (v *UrlScanVerifyStrategy) Request(url string) (bool, error) {
+func (v *UrlScanVerifyStrategy) Request(ctx context.Context, url string) (bool, error) {
 	apiUrl := os.Getenv("URLSCAN_API_URL")
 
 	hn, err := ExtractHostName(url)
@@ -122,10 +123,10 @@ func (v *UrlScanVerifyStrategy) Request(url string) (bool, error) {
 	return v.Results(subRes.Results)
 }
 
-func (v *UrlScanVerifyStrategy) Exec(links *[]string) (bool, string, error) {
+func (v *UrlScanVerifyStrategy) Exec(ctx context.Context, links *[]string) (bool, string, error) {
 	// Check Links
 	for _, link := range *links {
-		ret, err := v.Request(link)
+		ret, err := v.Request(ctx, link)
 
 		if err != nil {
 			log.Error(err)
@@ -143,43 +144,36 @@ func (v *UrlScanVerifyStrategy) Exec(links *[]string) (bool, string, error) {
 	return false, "", nil
 }
 
+// TODO : Refactor this to common func with Template?
 // Do Verification
-func (v *UrlScanVerifyStrategy) Do(url string) (bool, string, error) {
+func (v *UrlScanVerifyStrategy) Do(ctx context.Context, url string) (Result, error) {
 
 	log.Info("Verification Start for <" + url + ">")
+	result := &Result{
+		StrategyName:   "UrlScanVerifyStrategy",
+		Malicious:      false,
+		MaliciousLinks: []string{},
+	}
 
 	// Parse site
 	var links []string
-	has, err := Scrape(url, &links)
+	has, err := Scrape(ctx, url, &links)
 
 	if has == false || err != nil {
 		log.Error("Parse Error : has %t error %x", has, err)
-		return has, "", err
+		return *result, err
 	}
 
 	// Check Links
-	ret, link, err := v.Exec(&links)
+	ret, link, err := v.Exec(ctx, &links)
+	result.MaliciousLinks = append(result.MaliciousLinks, link)
+	result.Malicious = ret
 
 	if err != nil {
 		log.Error(err)
-		return ret, link, err
+		return *result, err
 	}
-	//for _, link := range links {
-	//	ret, err := Request(link)
-	//
-	//	if err != nil {
-	//		log.Error(err)
-	//		return false, "", err
-	//	}
-	//
-	//	if true == ret {
-	//		log.Error("Phishing link found. => %s", link)
-	//		return true, link, nil
-	//	} else {
-	//		log.Info("OK <" + link + ">")
-	//	}
-	//}
 
 	log.Info("No malicious links found.")
-	return ret, link, nil
+	return *result, nil
 }

@@ -19,7 +19,7 @@ func TestExtractHostName(t *testing.T) {
 		ret, err := ExtractHostName(c.url)
 
 		if err != nil || ret.URL != c.result {
-			t.Errorf("url %s is error. should be %s", ret, c.result)
+			t.Errorf("Url %s is error. should be %s", ret, c.result)
 		}
 	}
 }
@@ -39,7 +39,7 @@ func TestIsSchema(t *testing.T) {
 		ret, err := IsSchema(c.url)
 
 		if err != nil || ret != c.result {
-			t.Errorf("url %s is error. should be %t", c.url, c.result)
+			t.Errorf("Url %s is error. should be %t", c.url, c.result)
 		}
 	}
 }

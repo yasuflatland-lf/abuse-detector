@@ -9,23 +9,37 @@ import (
 )
 
 // TODO : Need to implement timeout
-// Scrape links from a url with Chrome headless browser
-func Scrape(url string, links *[]string) (bool, error) {
-	// create context
-	ctx, cancel := chromedp.NewContext(context.Background())
-	defer cancel()
+// Scrape links from a Url with Chrome headless browser
+func Scrape(ctx context.Context, url string, links *[]string) (bool, error) {
+
+	ctxLocal, _ := chromedp.NewContext(ctx)
 
 	var res []*cdp.Node
 	allHtml := `//a`
 
-	err := chromedp.Run(ctx,
-		chromedp.Navigate(url),
-		chromedp.Nodes(allHtml, &res),
-	)
+	// Create a new goroutine and send request there.
+	// The result goes to errCh channel.
+	errCh := make(chan error, 1)
+	go func() {
+		err := chromedp.Run(ctxLocal,
+			chromedp.Navigate(url),
+			chromedp.Nodes(allHtml, &res),
+		)
 
-	if err != nil {
-		log.Error(err)
-		return false, err
+		errCh <- err
+	}()
+
+	select {
+	case err := <-errCh:
+		if err != nil {
+			log.Error(err)
+			return false, err
+		}
+
+	// Timeout or Cancel comes here.
+	case <-ctx.Done():
+		<-errCh
+		return false, ctx.Err()
 	}
 
 	// log.Debug(NodeValues(res))

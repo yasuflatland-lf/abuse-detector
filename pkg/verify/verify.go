@@ -1,6 +1,7 @@
 package verify
 
 import (
+	"context"
 	"net/url"
 
 	"github.com/op/go-logging"
@@ -14,20 +15,15 @@ var logFmt = logging.MustStringFormatter(
 
 // Verify Interface
 type Verify interface {
-	Request(url string) (bool, error)
-	Do(url string) (bool, string, error)
+	Request(ctx context.Context, url string) (bool, error)
+	Do(ctx context.Context, url string) (Result, error)
 }
 
-type VerifyExecutor struct {
-	url      string
-	strategy Verify
-}
-
-func NewVerifyExecutor(url string, v Verify) *VerifyExecutor {
-	return &VerifyExecutor{
-		url:      url,
-		strategy: v,
-	}
+// Verify Result
+type Result struct {
+	StrategyName   string
+	Malicious      bool
+	MaliciousLinks []string
 }
 
 type HostNames struct {

@@ -1,6 +1,7 @@
 package verify
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -46,7 +47,7 @@ func (v *TransparencyReportVerifyStrategy) IsMalcious(respStr string) bool {
 }
 
 // Referred https://transparencyreport.google.com/safe-browsing/search
-func (v *TransparencyReportVerifyStrategy) Request(verifyUrl string) (bool, error) {
+func (v *TransparencyReportVerifyStrategy) Request(ctx context.Context, verifyUrl string) (bool, error) {
 	apiUrl := os.Getenv("GOOGLE_TRANSPARENCYREPORT_API_URL")
 
 	// request the HTML page.
@@ -73,10 +74,11 @@ func (v *TransparencyReportVerifyStrategy) Request(verifyUrl string) (bool, erro
 	return v.IsMalcious(string(bodyBytes)), nil
 }
 
-func (v *TransparencyReportVerifyStrategy) Exec(links *[]string) (bool, string, error) {
+// TODO : need to make this func concurrent.
+func (v *TransparencyReportVerifyStrategy) Exec(ctx context.Context, links *[]string) (bool, string, error) {
 	// Check Links
 	for _, link := range *links {
-		ret, err := v.Request(link)
+		ret, err := v.Request(ctx, link)
 
 		if err != nil {
 			log.Error(err)
@@ -94,28 +96,35 @@ func (v *TransparencyReportVerifyStrategy) Exec(links *[]string) (bool, string, 
 	return false, "", nil
 }
 
+// TODO : Refactor this to common func with Template?
 // Do Verification
-func (v *TransparencyReportVerifyStrategy) Do(url string) (bool, string, error) {
+func (v *TransparencyReportVerifyStrategy) Do(ctx context.Context, url string) (Result, error) {
 
 	log.Info("Verification Start for <" + url + ">")
+	result := &Result{
+		StrategyName:   "TransparencyReportVerifyStrategy",
+		Malicious:      false,
+		MaliciousLinks: []string{},
+	}
 
 	// Parse site
-	var links []string
-	has, err := Scrape(url, &links)
+	var links []string = []string{url}
+	has, err := Scrape(ctx, url, &links)
 
 	if has == false || err != nil {
-		log.Error("Parse Error : has %t error %x", has, err)
-		return has, "", err
+		log.Errorf("Parse Error : result <%t>", has)
+		return *result, err
 	}
 
 	// Check Links
-	ret, link, err := v.Exec(&links)
+	ret, link, err := v.Exec(ctx, &links)
+	result.MaliciousLinks = append(result.MaliciousLinks, link)
+	result.Malicious = ret
 
 	if err != nil {
 		log.Error(err)
-		return ret, link, err
+		return *result, err
 	}
 
-	log.Info("No malicious links found.")
-	return ret, link, nil
+	return *result, nil
 }

@@ -1,7 +1,9 @@
 package verify
 
 import (
+	"context"
 	"testing"
+	"time"
 )
 
 func TestGsafeRequest(t *testing.T) {
@@ -18,11 +20,13 @@ func TestGsafeRequest(t *testing.T) {
 		{url: "https://github.com/", result: false},
 		{url: "https://actionukee.com/WuofvBw", result: true},
 	}
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
 
 	v := NewTransparencyReportVerifyStrategy()
 
 	for _, c := range cases {
-		ret, _ := v.Request(c.url)
+		ret, _ := v.Request(ctx, c.url)
 		if ret != c.result {
 			t.Errorf("ret: %t result: %s}\n", ret, c.url)
 		}

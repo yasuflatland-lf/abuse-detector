@@ -1,16 +1,21 @@
 package verify
 
 import (
+	"context"
 	"testing"
+	"time"
 )
 
 func TestScrape(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
+
 	var links = []string{}
 	url := `https://www.google.com/`
-	ret, err := Scrape(url, &links)
+	ret, err := Scrape(ctx, url, &links)
 
 	if err != nil || true != ret {
-		t.Errorf("url <%s>, %v", url, err)
+		t.Errorf("Url <%s>, %v", url, err)
 	}
 
 	if len(links) <= 0 {
