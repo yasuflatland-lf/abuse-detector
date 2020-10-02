@@ -57,7 +57,7 @@ func Verify(c echo.Context) error {
 	}
 
 	// Set up channels
-	ctx, _ := context.WithTimeout(context.Background(), 60*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	errCh := make(chan VerifyResponse, len(strategies))
 	retCh := make(chan VerifyResponse, len(strategies))
 
@@ -104,9 +104,10 @@ func Verify(c echo.Context) error {
 
 		case ret := <-retCh:
 			if true == ret.Malicious {
+				cancel()
+				log.Infof("Return from [%d] %s", n, ret.StrategyName)
 				return c.JSON(http.StatusOK, ret)
 			}
-			log.Infof("Return from [%d] %s", n, ret.StrategyName)
 		// Cancel is returned when either Timeout or Cancel occur
 		case <-ctx.Done():
 			<-errCh

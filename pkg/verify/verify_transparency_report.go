@@ -76,20 +76,42 @@ func (v *TransparencyReportVerifyStrategy) Request(ctx context.Context, verifyUr
 
 // TODO : need to make this func concurrent.
 func (v *TransparencyReportVerifyStrategy) Exec(ctx context.Context, links *[]string) (bool, string, error) {
+
+	errCh := make(chan error, len(*links))
+	retCh := make(chan Result, len(*links))
+
 	// Check Links
-	for _, link := range *links {
-		ret, err := v.Request(ctx, link)
+	for _, l := range *links {
+		go func(link string) {
+			retResult := &Result{}
+			ret, err := v.Request(ctx, link)
 
-		if err != nil {
-			log.Error(err)
-			return false, "", err
-		}
+			retResult.Malicious = ret
+			retResult.MaliciousLinks = append(retResult.MaliciousLinks, link)
 
-		if true == ret {
-			log.Error("Phishing link found. => %s", link)
-			return true, link, nil
-		} else {
-			log.Info("OK <" + link + ">")
+			errCh <- err
+			retCh <- *retResult
+		}(l)
+	}
+
+	for _, loopTmp := range *links {
+		select {
+		case err := <-errCh:
+			if err != nil {
+				log.Error(err)
+				return false, "", err
+			}
+		case retResult := <-retCh:
+			if true == retResult.Malicious {
+				log.Error("Phishing link found. => %s", retResult.MaliciousLinks[0])
+				return retResult.Malicious, retResult.MaliciousLinks[0], nil
+			} else {
+				log.Info("OK <" + retResult.MaliciousLinks[0] + ">")
+			}
+		// Timeout or Cancel comes here.
+		case <-ctx.Done():
+			<-errCh
+			return false, loopTmp, ctx.Err()
 		}
 	}
 
