@@ -1,0 +1,18 @@
+version: "3"
+services:
+  chromedp:
+    image: chromedp/headless-shell
+    ports:
+      - 9222:9222
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - 3000:3000
+    volumes:
+      - ./:/app
+    links:
+      - chromedp
+    depends_on:
+      - chromedp

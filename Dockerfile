@@ -14,8 +14,15 @@ WORKDIR /app
 
 COPY --from=build /go/app/app .
 
-RUN addgroup go \
+RUN apk add --update --no-cache go \
+  && export GOPATH=/root/go \
+  && export PATH=${GOPATH}/bin:/usr/local/go/bin:$PATH \
+  && export GOBIN=$GOROOT/bin \
+  && mkdir -p ${GOPATH}/src ${GOPATH}/bin \
+  && export GO111MODULE=on \
+  && addgroup go \
   && adduser -D -G go go \
-  && chown -R go:go /app/app
+  && chown -R go:go /app/app \
+  && chmod +x /app/app
 
-CMD ["./app"]
+CMD ["go", "run", "main.go"]
