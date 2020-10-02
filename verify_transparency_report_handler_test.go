@@ -15,7 +15,7 @@ func TestHelloHandler(t *testing.T) {
 
 	router := NewRouter()
 
-	req := httptest.NewRequest("GET", "/verify?url=https://www.google.com/", nil)
+	req := httptest.NewRequest("GET", "/verify?url=https://bono760lbk.site/", nil)
 	rec := httptest.NewRecorder()
 
 	router.ServeHTTP(rec, req)

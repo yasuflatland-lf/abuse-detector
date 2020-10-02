@@ -12,12 +12,17 @@ go build *.go
 ```    
 ## How to run for Development
 ```shell script
-go run *.go
+go run main.go
 ```
 How to run production
 ```
 docker-compose up
 ```
+Request verification
+```
+http://localhost:3000/verify?url=https://www.google.com/
+```
+
 ## How to build Docker image
 This is how to build and confirm the image is built correctly.
 ```
