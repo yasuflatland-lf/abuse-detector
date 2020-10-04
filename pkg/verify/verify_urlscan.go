@@ -201,6 +201,16 @@ func (v *UrlScanVerifyStrategy) Do(ctx context.Context, url string) (Result, err
 		MaliciousLinks: []string{},
 	}
 
+	// Check URL itself if it's malicious
+	initRet := v.Request(ctx, url)
+	result.MaliciousLinks = append(result.MaliciousLinks, url)
+	result.Malicious = initRet.Malicious
+	result.StatusCode = initRet.StatusCode
+	if initRet.Error != nil || true == result.Malicious {
+		log.Error(initRet.Error)
+		return *result, initRet.Error
+	}
+
 	// Parse site
 	var links []string
 	has, err := Scrape(ctx, url, &links)

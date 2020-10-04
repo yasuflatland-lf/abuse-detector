@@ -2,8 +2,9 @@ package verify
 
 import (
 	"context"
-	"flag"
 	"strings"
+
+	"github.com/mafredri/cdp/devtool"
 
 	"github.com/chromedp/cdproto/cdp"
 	"github.com/chromedp/chromedp"
@@ -13,12 +14,21 @@ import (
 // chromedp uses the external API. For more details, please refer the link below.
 // https://docs.browserless.io/docs/go.html#docsNav
 func Scrape(ctx context.Context, url string, links *[]string) (bool, error) {
-	var devToolWsUrl string
+	// Create a new goroutine and send request there.
+	// The result goes to errCh channel.
+	errCh := make(chan error, 1)
 
-	flag.StringVar(&devToolWsUrl, "devtools-ws-url", "wss://chrome.browserless.io", "DevTools Websocket URL")
-	flag.Parse()
+	// Use the DevTools HTTP/JSON API to manage targets (e.g. pages, webworkers).
+	devt := devtool.New("http://chromedp:9222")
+	pt, err := devt.Get(ctx, devtool.Page)
+	if err != nil {
+		pt, err = devt.Create(ctx)
+		if err != nil {
+			errCh <- err
+		}
+	}
 
-	actxt, cancelActxt := chromedp.NewRemoteAllocator(ctx, devToolWsUrl)
+	actxt, cancelActxt := chromedp.NewRemoteAllocator(ctx, pt.WebSocketDebuggerURL)
 	defer cancelActxt()
 
 	ctxLocal, _ := chromedp.NewContext(actxt) //
@@ -26,9 +36,6 @@ func Scrape(ctx context.Context, url string, links *[]string) (bool, error) {
 	var res []*cdp.Node
 	allHtml := `//a`
 
-	// Create a new goroutine and send request there.
-	// The result goes to errCh channel.
-	errCh := make(chan error, 1)
 	go func() {
 		err := chromedp.Run(ctxLocal,
 			chromedp.Navigate(url),

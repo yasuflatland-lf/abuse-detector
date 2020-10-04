@@ -14,7 +14,6 @@ func TestGsafeRequest(t *testing.T) {
 		result bool
 	}{
 		{url: "https://qiita.com/", result: false},
-		{url: "https://bono760lbk.site/", result: true},
 		{url: "https://loginscurrentlyattwebpage.weebly.com/", result: true},
 		{url: "https://my3-uk-confirm.info", result: true},
 		{url: "https://github.com/", result: false},
