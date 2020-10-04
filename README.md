@@ -42,17 +42,13 @@ go build *.go
     ```
     COMMON_APP_ENV=
     ```
-1. Start Chrome Headless Server
+1. Run command below.
     ```
-    docker run -d -p 9222:9222 --rm --name headless-shell --shm-size 2G chromedp/headless-shell
-    ```
-1. Run server as below. `realize` command allows Hot reloading.
-    ```shell script
-    realize start
+    docker-compose up
     ```
 
 ## How to run for production
-1. Create `.env` based off from `.env.default`
+1. Create `.env` based off from `.env.default`. Make sure `production` is set to `COMMON_APP_ENV`.
 1. Set API Keys accordingly.
 1. Run command below.
     ```
