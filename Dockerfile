@@ -14,7 +14,8 @@ WORKDIR /app
 
 COPY --from=build /go/app/app .
 
-RUN apk add --update --no-cache go \
+RUN apk add --update --no-cache go git \
+  && GO111MODULE=off go get github.com/oxequa/realize \
   && export GOPATH=/root/go \
   && export PATH=${GOPATH}/bin:/usr/local/go/bin:$PATH \
   && export GOBIN=$GOROOT/bin \

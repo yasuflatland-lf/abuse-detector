@@ -9,6 +9,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/go-resty/resty/v2 v2.3.0
 	github.com/joho/godotenv v1.3.0
+	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/kr/pretty v0.2.1
 	github.com/labstack/echo/v4 v4.1.17
 	github.com/mafredri/cdp v0.29.2

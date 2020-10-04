@@ -31,8 +31,12 @@ docker run -p 3000:3000 -d --name studio-abuse-detector studio-abuse-detector:la
 curl localhost:3000
 ```
 
-## How to remove all images
+## How to run Chrome Headless server at local
 ```
+docker run -d -p 9222:9222 --rm --name headless-shell --shm-size 2G chromedp/headless-shell
+```
+## How to remove all images
+```~~~~
 docker rm -f `docker ps -qa`
 ```
 
