@@ -177,5 +177,6 @@ func (v *TransparencyReportVerifyStrategy) Do(ctx context.Context, url string) (
 		return *result, err
 	}
 
+	result.StatusCode = initRet.StatusCode
 	return *result, nil
 }

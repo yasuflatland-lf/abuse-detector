@@ -2,6 +2,7 @@ package verify
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 )
@@ -29,5 +30,28 @@ func TestGsafeRequest(t *testing.T) {
 		if ret.Malicious != c.result {
 			t.Errorf("ret: %v result: %s}\n", ret, c.url)
 		}
+	}
+}
+
+func TestGsafeDo(t *testing.T) {
+	LoadEnv()
+
+	cases := []struct {
+		url    string
+		result bool
+	}{
+		{url: "https://www.google.com/", result: false},
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
+
+	v := NewTransparencyReportVerifyStrategy()
+
+	for _, c := range cases {
+		ret, err := v.Do(ctx, c.url)
+		if ret.Malicious != c.result || err != nil {
+			t.Errorf("ret: %v result: %s}\n", ret, c.url)
+		}
+		fmt.Println(ret)
 	}
 }

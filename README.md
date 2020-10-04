@@ -1,10 +1,10 @@
 # Abuse Detector
-This application is for preventing phishing sites are created on Studio.
+This application is for preventing phishing sites are created on Studio. 
 
 ## Requirements
 - Go 1.14.9 >=
-- Docker
-- Docker Compose
+- Docker 2.4.0.0 >=
+- Docker Compose 1.27.4 >=
 
 ## Usage
 ### Request verification
@@ -18,11 +18,11 @@ The response would look like below if the site is not malicious.
     "strategyName": "",
     "link": [],
     "malicious": false,
-    "statusCode": 0,
+    "statusCode": 200,
     "error": null
 }
 ```
-If it's malicious, it looks like below.
+If it's malicious, the response looks like below.
 ```
 {
     "strategyName": "TransparencyReportVerifyStrategy",
@@ -37,7 +37,7 @@ If it's malicious, it looks like below.
 go build *.go
 ```    
 ## How to run for Development
-1. Create `.env` based off from `.env.default`
+1. Create `.env` based off from `.env.default`. For API keys required, please refer documents below in this README. 
 1. In `.env` file, Remove `production` string from `COMMON_APP_ENV` as follows.
     ```
     COMMON_APP_ENV=
@@ -50,6 +50,11 @@ go build *.go
     ```shell script
     realize start
     ```
+
+## How to run all tests
+```
+go test -v -race -run=. -bench=. ./...
+```
 
 ##How to run for production
 1. Create `.env` based off from `.env.default`
@@ -91,3 +96,7 @@ docker-compose exec app /bin/sh
 1. Create API key in the project.
 1. Look for `Google Safe Browsing API` in `Liberary` tab and add it for the API Key created.
 1. Copy the `Key` and set it to `GOOGLE_SAFE_BROWSING_API_KEY` in the `.env` file
+
+## Caveat
+- Chrome Headless server in use may need load balancing for a more massive load of access.
+- Test links are real phishing sites for now. They become offline or removed in the short term, so tests highly likely to fail.
