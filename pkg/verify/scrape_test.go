@@ -7,6 +7,8 @@ import (
 )
 
 func TestScrape(t *testing.T) {
+	LoadEnv()
+
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
@@ -24,6 +26,8 @@ func TestScrape(t *testing.T) {
 }
 
 func TestFindHref(t *testing.T) {
+	LoadEnv()
+
 	cases := []struct {
 		hrefs  []string
 		result bool

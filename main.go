@@ -18,6 +18,14 @@ var logFmt = logging.MustStringFormatter(
 	`%{color}%{time:15:04:05.000} PID=%{pid} MOD=%{module} PKG=%{shortpkg} %{shortfile} FUNC=%{shortfunc} ▶ %{level:.4s} %{id:03x} %{color:reset} %{message}`,
 )
 
+type VerifyResponse struct {
+	StrategyName string   `json:"strategyName" xml:"strategyName"`
+	Links        []string `json:"link" xml:"link"`
+	Malicious    bool     `json:"malicious" xml:"malicious"`
+	StatusCode   int      `json:"statusCode" xml:"statusCode"`
+	Error        error    `json:"error" xml:"error"`
+}
+
 func main() {
 	err := godotenv.Load()
 	if err != nil {
@@ -44,13 +52,6 @@ func NewRouter() *echo.Echo {
 	e.GET("/verify", Verify)
 
 	return e
-}
-
-type VerifyResponse struct {
-	StrategyName string   `json:"strategyName" xml:"strategyName"`
-	Links        []string `json:"link" xml:"link"`
-	Malicious    bool     `json:"malicious" xml:"malicious"`
-	Error        error    `json:"error" xml:"error"`
 }
 
 // Handler
@@ -84,21 +85,16 @@ func Verify(c echo.Context) error {
 
 			if err != nil {
 				vr.Error = err
+				vr.Links = ret.MaliciousLinks
 				vr.StrategyName = ret.StrategyName
+				vr.StatusCode = ret.StatusCode
 				errCh <- *vr
 			} else {
 				vr.Links = ret.MaliciousLinks
 				vr.Malicious = ret.Malicious
 				vr.StrategyName = ret.StrategyName
+				vr.StatusCode = ret.StatusCode
 				retCh <- *vr
-
-				//if true == ret.Malicious {
-				//	log.Info("Malicious link found. Interrupt processing...")
-				//
-				//	// Cancel all other process once
-				//	// one of verification confirmed the URL is malicious.
-				//	cancel()
-				//}
 			}
 		}()
 	}
@@ -106,6 +102,7 @@ func Verify(c echo.Context) error {
 	for _, n := range strategies {
 		select {
 		case err := <-errCh:
+			cancel()
 			return c.JSON(http.StatusOK, err)
 
 		case ret := <-retCh:

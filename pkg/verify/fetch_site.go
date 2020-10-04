@@ -1,6 +1,7 @@
 package verify
 
 import (
+	"crypto/tls"
 	"net/http"
 	"net/url"
 	"strings"
@@ -8,9 +9,11 @@ import (
 )
 
 const (
-	MaxIdleConns       = 10
-	IdleConnTimeout    = 30 * time.Second
-	DisableCompression = true
+	MaxIdleConns        = 200
+	MaxIdleConnsPerHost = 200
+	MaxConnsPerHost     = 200
+	IdleConnTimeout     = 60 * time.Second
+	DisableCompression  = true
 )
 
 // Validate schema
@@ -48,9 +51,12 @@ func Fetch(url string) (resp *http.Response, err error) {
 	if true == ret {
 		// HTTPS
 		tr := &http.Transport{
-			MaxIdleConns:       MaxIdleConns,
-			IdleConnTimeout:    IdleConnTimeout,
-			DisableCompression: DisableCompression,
+			MaxIdleConns:        MaxIdleConns,
+			MaxIdleConnsPerHost: MaxIdleConnsPerHost,
+			MaxConnsPerHost:     MaxConnsPerHost,
+			IdleConnTimeout:     IdleConnTimeout,
+			DisableCompression:  DisableCompression,
+			TLSClientConfig:     &tls.Config{InsecureSkipVerify: true},
 		}
 		client := &http.Client{Transport: tr}
 		return client.Get(url)

@@ -1,5 +1,11 @@
 version: "3"
 services:
+  chromedp:
+    build:
+      context: .
+      dockerfile: DockerfileChrome
+    ports:
+      - 9222:9222
   app:
     build:
       context: .
