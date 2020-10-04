@@ -51,18 +51,18 @@ go build *.go
     realize start
     ```
 
-## How to run all tests
-```
-go test -v -race -run=. -bench=. ./...
-```
-
-##How to run for production
+## How to run for production
 1. Create `.env` based off from `.env.default`
 1. Set API Keys accordingly.
 1. Run command below.
     ```
     docker-compose up
     ```
+   
+## How to run all tests
+```
+go test -v -race -run=. -bench=. ./...
+```   
 
 ## How to build Docker image
 This is how to build and confirm the image is built correctly.
