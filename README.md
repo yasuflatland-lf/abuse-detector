@@ -36,23 +36,16 @@ If it's malicious, the response looks like below.
 ```shell script
 go build *.go
 ```    
-## How to run for Development
+## How to run
 1. Create `.env` based off from `.env.default`. For API keys required, please refer documents below in this README. 
-1. In `.env` file, Remove `production` string from `COMMON_APP_ENV` as follows.
-    ```
-    COMMON_APP_ENV=
-    ```
+1. Set API Keys accordingly. For API keys required, please refer documents below in this README.
 1. Run command below.
     ```
     docker-compose up
     ```
-
-## How to run for production
-1. Create `.env` based off from `.env.default`. Make sure `production` is set to `COMMON_APP_ENV`.
-1. Set API Keys accordingly.
-1. Run command below.
+    For the initial start, run as below.
     ```
-    docker-compose up
+    docker-compose up --build
     ```
    
 ## How to run all tests
