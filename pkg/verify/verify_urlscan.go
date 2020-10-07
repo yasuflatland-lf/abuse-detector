@@ -35,14 +35,20 @@ type UrlScanVerdicts struct {
 	Overall UrlScanOverall `json:"overall"`
 }
 
+type UrlScanTask struct {
+	URL string `json:"url"`
+}
+
 type UrlScanResultDetails struct {
+	Task UrlScanTask `json:"task"`
 	Verdicts UrlScanVerdicts `json:"verdicts"`
 }
 
 // Phishing site URL validation
 // true if it's phishing site or false
-func (v *UrlScanVerifyStrategy) IsPhishingURL(r UrlScanResult) (bool, error) {
+func (v *UrlScanVerifyStrategy) IsPhishingURL(r UrlScanResult) (UrlScanResultDetails, error) {
 	client := resty.New()
+	emptyRet := &UrlScanResultDetails{}
 
 	resp, err := client.R().
 		EnableTrace().
@@ -50,7 +56,7 @@ func (v *UrlScanVerifyStrategy) IsPhishingURL(r UrlScanResult) (bool, error) {
 
 	if err != nil {
 		log.Error("Fail to read response")
-		return false, errors.Wrap(err, "Fail to read urlscan.io POST result")
+		return *emptyRet, errors.Wrap(err, "Fail to read urlscan.io POST result")
 	}
 
 	var result UrlScanResultDetails
@@ -58,31 +64,60 @@ func (v *UrlScanVerifyStrategy) IsPhishingURL(r UrlScanResult) (bool, error) {
 	if err != nil {
 		log.Error(err)
 		//log.Error("doc %+v", pretty.Formatter(err))
-		return false, err
+		return *emptyRet, err
 	}
 
-	return result.Verdicts.Overall.Malicious, nil
+	//result.Verdicts.Overall.Malicious
+	//result.Task.URL
+	return result, nil
 }
 
 // Phishing site URL validation
 // true if it's phishing site or false
-func (v *UrlScanVerifyStrategy) Results(results []UrlScanResult) (bool, error) {
+func (v *UrlScanVerifyStrategy) Results(ctx context.Context, results []UrlScanResult) (bool, string, error) {
+	errCh := make(chan error, len(results))
+	retCh := make(chan Result, len(results))
+
 	for _, r := range results {
-		ret, err := v.IsPhishingURL(r)
+		go func(result UrlScanResult) {
+			retResult := &Result{}
+			ret, err := v.IsPhishingURL(result)
 
-		if err != nil {
-			log.Error("Fail to read response")
-			return false, errors.Wrap(err, "Fail to read urlscan.io POST result")
-		}
+			retResult.StatusCode = http.StatusOK
+			retResult.Error = err
+			retResult.Malicious = ret.Verdicts.Overall.Malicious
+			retResult.MaliciousLinks = append(retResult.MaliciousLinks, ret.Task.URL)
 
-		if true == ret {
-			// Phishing site detected. Return right away
-			return true, nil
+			errCh <- err
+			retCh <- *retResult
+		}(r)
+	}
+
+	for _, r := range results {
+		select {
+		case err := <-errCh:
+			if err != nil {
+				log.Error(err)
+				return false, "", errors.Wrap(err, "Fail to read urlscan.io POST result")
+			}
+		case retResult := <-retCh:
+			if true == retResult.Malicious {
+				log.Errorf("Phishing link found in this link. => %s", retResult.MaliciousLinks[0])
+				return retResult.Malicious, retResult.MaliciousLinks[0], nil
+			} else {
+				if 0 != len(retResult.MaliciousLinks[0]) {
+					log.Info("OK <" + retResult.MaliciousLinks[0] + ">")
+				}
+			}
+		// Timeout or Cancel comes here.
+		case <-ctx.Done():
+			<-errCh
+			return false, "Cancel or Done" + r.Result , ctx.Err()
 		}
 	}
 
 	// Not a phishing site
-	return false, nil
+	return false, "", nil
 }
 
 // Phishing site URL validation
@@ -131,7 +166,7 @@ func (v *UrlScanVerifyStrategy) Request(ctx context.Context, url string) Respons
 		return *response
 	}
 
-	ret, err := v.Results(subRes.Results)
+	ret, _, err := v.Results(ctx, subRes.Results)
 
 	if err != nil {
 		log.Error(err)
@@ -194,7 +229,7 @@ func (v *UrlScanVerifyStrategy) Exec(ctx context.Context, links *[]string) (bool
 // Do Verification
 func (v *UrlScanVerifyStrategy) Do(ctx context.Context, url string) (Result, error) {
 
-	log.Info("Verification Start for <" + url + ">")
+	log.Info("Verification Start for <" + url + "> - UrlScanVerifyStrategy")
 	result := &Result{
 		StrategyName:   "UrlScanVerifyStrategy",
 		Malicious:      false,

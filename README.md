@@ -15,18 +15,21 @@ http://localhost:3000/verify?url=https://www.google.com/
 The response would look like below if the site is not malicious.
 ```
 {
-    "strategyName": "",
-    "link": [],
+    "strategyName": "TransparencyReportVerifyStrategy",
+    "link": ["https://www.google.com/"],
     "malicious": false,
     "statusCode": 200,
-    "error": null
+    "error": {
+        "Name": "google-chrome",
+        "Err": {}
+    }
 }
 ```
 If it's malicious, the response looks like below.
 ```
 {
     "strategyName": "TransparencyReportVerifyStrategy",
-    "link": ["http://sucursalvirtualpersonas-sa.com"],
+    "link": ["https://zonabn1segura-pe.com/"],
     "malicious": true,
     "statusCode": 200,
     "error": null
@@ -36,25 +39,42 @@ If it's malicious, the response looks like below.
 ```shell script
 go build *.go
 ```    
-## How to run for Development
+## How to run production
 1. Create `.env` based off from `.env.default`. For API keys required, please refer documents below in this README. 
-1. In `.env` file, Remove `production` string from `COMMON_APP_ENV` as follows.
-    ```
-    COMMON_APP_ENV=
-    ```
+1. Set API Keys accordingly. For API keys required, please refer documents below in this README.
 1. Run command below.
     ```
     docker-compose up
+    ```
+    For the initial start, run as below.
+    ```
+    docker-compose up --build
+    ```
+## How to run for development
+1. Create `.env` based off from `.env.default`. For API keys required, please refer documents below in this README. 
+1. Set API Keys accordingly. For API keys required, please refer documents below in this README.
+1. Comment out `CMD ["./app"]` and remove comment of `CMD [ "realize", "start" ]` instead to enable realize for hot reloading.
+1. Run command below.
+    ```
+    docker-compose up
+    ```
+    For the initial start, run as below.
+    ```
+    docker-compose up --build
     ```
 
-## How to run for production
-1. Create `.env` based off from `.env.default`. Make sure `production` is set to `COMMON_APP_ENV`.
-1. Set API Keys accordingly.
-1. Run command below.
-    ```
-    docker-compose up
-    ```
+## How to run for debugging with IDE, such as Goland
+1. Create `.env` based off from `.env.default`. For API keys required, please refer documents below in this README.
+1. Configure `COMMON_APP_ENV=`, no strings. (Default should be `production`) 
+1. Set API Keys accordingly. For API keys required, please refer documents below in this README.
+1. Comment out `CMD ["./app"]` and remove comment of `CMD [ "realize", "start" ]` instead to enable realize for hot reloading.
+1. Spin up servers as below
    
+   Spin up chrome headless server
+   ```
+   docker run -d -p 9222:9222 --rm --name headless-shell --shm-size 2G chromedp/headless-shell
+   ```
+1. Then, right click `main.go` and debug run on Goland IDE. 
 ## How to run all tests
 ```
 go test -v -race -run=. -bench=. ./...

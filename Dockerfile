@@ -15,12 +15,12 @@ WORKDIR /app
 
 COPY --from=build /go/app/app .
 
-RUN apk add --no-cache alpine-sdk git \
+RUN apk add --no-cache git \
   && go get -u github.com/oxequa/realize \
   && addgroup go \
   && adduser -D -G go go \
   && chown -R go:go /app/app \
   && chmod +x /app/app
 
-# CMD ["go", "run", "main.go"]
-CMD [ "realize", "start" ]
+CMD ["./app"]
+# CMD [ "realize", "start" ]

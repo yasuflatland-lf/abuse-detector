@@ -17,5 +17,6 @@ require (
 	github.com/pkg/errors v0.8.1
 	github.com/stretchr/testify v1.4.0
 	github.com/thoas/go-funk v0.7.0
+	golang.org/x/net v0.0.0-20200822124328-c89045814202
 	gopkg.in/yaml.v2 v2.3.0 // indirect
 )

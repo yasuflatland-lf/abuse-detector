@@ -1,8 +1,10 @@
 package verify
 
 import (
+	"context"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/kr/pretty"
@@ -25,6 +27,8 @@ func TestIsHttps(t *testing.T) {
 }
 
 func TestFetchSiteSmoke(t *testing.T) {
+	LoadEnv()
+
 	cases := []struct {
 		url  string
 	}{
@@ -32,7 +36,8 @@ func TestFetchSiteSmoke(t *testing.T) {
 		{url: "http://violet-evergarden.jp/"},
 	}
 	for _, c := range cases {
-		doc, err := Fetch(c.url)
+		ctx, _ := context.WithTimeout(context.TODO(), 20 * time.Second)
+		doc, err := Fetch(ctx, c.url)
 
 		expectDoc := goquery.Document{}
 

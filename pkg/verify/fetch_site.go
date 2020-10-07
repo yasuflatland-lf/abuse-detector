@@ -1,19 +1,15 @@
 package verify
 
 import (
+	"context"
 	"crypto/tls"
+	"golang.org/x/net/context/ctxhttp"
 	"net/http"
 	"net/url"
+	"os"
+	"strconv"
 	"strings"
 	"time"
-)
-
-const (
-	MaxIdleConns        = 200
-	MaxIdleConnsPerHost = 200
-	MaxConnsPerHost     = 200
-	IdleConnTimeout     = 60 * time.Second
-	DisableCompression  = true
 )
 
 // Validate schema
@@ -31,17 +27,12 @@ func IsHttps(urlStr string) (bool, error) {
 
 // Fetch URL response
 // Automatically detect https or http
-// TODO : need to replace this to below.
-// https://future-architect.github.io/articles/20190713/
-//import (
-//    "https://godoc.org/golang.org/x/net/context/ctxhttp"
-//)
-//
-//func accessSHS(ctx context.Context) {
-//    // ctxを第一引数で渡す
-//    res, err := ctxhttp.Get(ctx, nil, "https://shs.sh")
-//}
-func Fetch(url string) (resp *http.Response, err error) {
+func Fetch(ctx context.Context,  url string) (resp *http.Response, err error) {
+	MaxIdleConns, _ := strconv.Atoi(os.Getenv("COMMON_MAX_IDLE_CONNS"))
+	MaxIdleConnsPerHost, _ := strconv.Atoi(os.Getenv("COMMON_MAX_IDLE_CONN_SPER_HOST"))
+	MaxConnsPerHost, _ := strconv.Atoi(os.Getenv("COMMON_MAX_CONNS_PER_HOST"))
+	IdleConnTimeout, _ := strconv.Atoi(os.Getenv("COMMON_IDLE_CONN_TIMEOUT"))
+	DisableCompression, _ := strconv.ParseBool(os.Getenv("COMMON_DISABLE_COMPRESSION"))
 	ret, err := IsHttps(url)
 
 	if err != nil {
@@ -54,14 +45,14 @@ func Fetch(url string) (resp *http.Response, err error) {
 			MaxIdleConns:        MaxIdleConns,
 			MaxIdleConnsPerHost: MaxIdleConnsPerHost,
 			MaxConnsPerHost:     MaxConnsPerHost,
-			IdleConnTimeout:     IdleConnTimeout,
+			IdleConnTimeout:     time.Duration(IdleConnTimeout) * time.Second,
 			DisableCompression:  DisableCompression,
 			TLSClientConfig:     &tls.Config{InsecureSkipVerify: true},
 		}
 		client := &http.Client{Transport: tr}
-		return client.Get(url)
+		return ctxhttp.Get(ctx, client, url)
 	} else {
 		// HTTP
-		return http.Get(url)
+		return ctxhttp.Get(ctx, http.DefaultClient, url)
 	}
 }

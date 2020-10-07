@@ -41,22 +41,6 @@ type HostNames struct {
 	HostName string
 }
 
-type Env struct {
-	DevToolUrl          string
-	MaxIdleConns        int
-	MaxIdleConnsPerHost int
-	MaxConnsPerHost     int
-	IdleConnTimeout     int
-	DisableCompression  bool
-}
-
-var veryfyEnv Env
-
-// Initialize
-func init() {
-
-}
-
 // Extract valid URL for verification API
 // Return URL with either http or https or return empty string
 func ExtractHostName(urlStr string) (HostNames, error) {

@@ -68,13 +68,13 @@ func Verify(c echo.Context) error {
 	errCh := make(chan VerifyResponse, len(strategies))
 	retCh := make(chan VerifyResponse, len(strategies))
 
-	for _, strategy := range strategies {
+	for _, s := range strategies {
 
 		// Run each verification concurrent.
 		// Results are verified by the response order.
 		// Return the result as soon as the site is confirmed,
 		// including malicious links.
-		go func() {
+		go func(strategy verify.Verify) {
 			vr := &VerifyResponse{
 				Links:     []string{},
 				Malicious: false,
@@ -83,28 +83,27 @@ func Verify(c echo.Context) error {
 
 			ret, err := strategy.Do(ctx, url)
 
+			vr.Links = ret.MaliciousLinks
+			vr.StrategyName = ret.StrategyName
+			vr.StatusCode = ret.StatusCode
+
 			if err != nil {
 				vr.Error = err
-				vr.Links = ret.MaliciousLinks
-				vr.StrategyName = ret.StrategyName
-				vr.StatusCode = ret.StatusCode
 				errCh <- *vr
 			} else {
-				vr.Links = ret.MaliciousLinks
 				vr.Malicious = ret.Malicious
-				vr.StrategyName = ret.StrategyName
-				vr.StatusCode = ret.StatusCode
 				retCh <- *vr
 			}
-		}()
+		}(s)
 	}
 
 	for _, n := range strategies {
 		select {
 		case err := <-errCh:
-			cancel()
-			return c.JSON(http.StatusOK, err)
-
+			if err.Error != nil {
+				cancel()
+				return c.JSON(http.StatusOK, err)
+			}
 		case ret := <-retCh:
 			if true == ret.Malicious {
 				cancel()

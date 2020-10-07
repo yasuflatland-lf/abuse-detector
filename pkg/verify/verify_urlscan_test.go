@@ -24,7 +24,7 @@ func TestRequest(t *testing.T) {
 
 	for _, c := range cases {
 		ret := v.Request(ctx, c.url)
-		if ret.Malicious != c.result {
+		if ret.Error != nil {
 			t.Errorf("ret<%v> result<%s>}\n", ret, c.url)
 		}
 	}

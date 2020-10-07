@@ -58,7 +58,7 @@ func (v *TransparencyReportVerifyStrategy) Request(ctx context.Context, verifyUr
 	}
 
 	// request the HTML page.
-	res, err := Fetch(apiUrl + "status?site=" + verifyUrl)
+	res, err := Fetch(ctx, apiUrl + "status?site=" + verifyUrl)
 
 	if err != nil {
 		response.StatusCode = res.StatusCode
@@ -130,7 +130,7 @@ func (v *TransparencyReportVerifyStrategy) Exec(ctx context.Context, links *[]st
 		// Timeout or Cancel comes here.
 		case <-ctx.Done():
 			<-errCh
-			return false, loopTmp, ctx.Err()
+			return false, "Cancel or Done" + loopTmp, ctx.Err()
 		}
 	}
 
@@ -141,7 +141,7 @@ func (v *TransparencyReportVerifyStrategy) Exec(ctx context.Context, links *[]st
 // Do Verification
 func (v *TransparencyReportVerifyStrategy) Do(ctx context.Context, url string) (Result, error) {
 
-	log.Info("Verification Start for <" + url + ">")
+	log.Info("Verification Start for <" + url + "> - TransparencyReportVerifyStrategy")
 	result := &Result{
 		StrategyName:   "TransparencyReportVerifyStrategy",
 		Malicious:      false,
